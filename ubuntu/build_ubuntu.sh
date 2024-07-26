@@ -1,5 +1,14 @@
 #!/bin/bash
 
+#==============================================================================
+# Script Name    : build_ubuntu.sh
+# Description    : This script includes everything necessary after a fresh
+#                  Ubuntu installation.
+#
+# Author         : Alan MARCHAND
+# Compatibility  : Bash Only
+#==============================================================================
+
 # Exit immediately if a command exits with a non-zero status
 set -e
 
