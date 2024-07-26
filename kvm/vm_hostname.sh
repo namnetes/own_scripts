@@ -30,10 +30,23 @@ replace_hostname_in_file() {
 # Script Execution                                                            #
 ###############################################################################
 
+# Must be root to execute the script
+if [ "$(id -u)" -ne 0 ]; then
+  echo "You must be a root user" >&2
+  exit 1
+fi
+
+# Current hostname
 current_hostname=$(hostname)
 
 # Prompt the user for a new hostname
 prompt_new_hostname
+
+# if the new hostname is the same as current one, there is nothing to do
+if [ "$new_hostname" = "$current_hostname" ]; then
+  echo "New hostname is same as the current one. There is nothing to do !"
+  exit 1
+fi
 
 # List of files to modify (add other files if necessary)
 files_to_modify="/etc/hostname /etc/hosts"
