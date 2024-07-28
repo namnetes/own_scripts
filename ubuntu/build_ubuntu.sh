@@ -75,6 +75,7 @@ install_packages() {
         lsb-release
         man
         neofetch
+        ncat
         nmap
         pdfgrep
         plocate
