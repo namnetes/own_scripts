@@ -1,0 +1,68 @@
+#!/bin/bash
+#
+# nautilus_encrypt.sh - Nautilus script to encrypt a selected file using encrypt.sh
+#
+# Usage:
+#   ./nautilus_encrypt.sh <file_to_encrypt>
+#
+# Note: This script prompts for a passphrase using yad and calls the encrypt.sh script.
+
+TITLE="Nautilus Script Chiffrement OpenSSL"
+ENCRYPT_SCRIPT="$HOME/own_scripts/crypto_utils/encrypt_file.sh"
+
+# Check if yad is installed
+if ! command -v yad &> /dev/null; then
+    msg="Error: yad is not installed. Please install yad to use this script."
+    notify-send --urgency=critical "$TITLE" "$msg"
+    exit 1
+fi
+
+# Check if script to execute exists
+if [ ! -f "$ENCRYPT_SCRIPT" ]; then
+    msg="Error: $ENCRYPT_SCRIPT not found."
+    notify-send --urgency=critical "$TITLE" "$msg"
+    exit 1
+fi
+
+# Get the input file from the command line argument
+input_file="$1"
+
+# Check if the file is provided
+if [ -z "$input_file" ]; then
+    msg="Error: No file specified."
+    notify-send --urgency=critical "$TITLE" "$msg"
+    exit 1
+fi
+
+# Check if the file exists
+if [ ! -f "$input_file" ]; then
+    msg="Error: The file '$input_file' does not exist."
+    notify-send --urgency=critical "$TITLE" "$msg"
+    exit 1
+fi
+
+# Define the output file name
+output_file="${input_file}.enc"
+
+# Prompt for the passphrase using yad
+password=$(yad --entry --TITLE="Passphrase" --text="Enter passphrase for encryption:" --hide-text)
+
+# Check if the user canceled the dialog
+if [ $? -ne 0 ]; then
+    msg="Encryption canceled."
+    notify-send --urgency=critical "$TITLE" "$msg"
+    exit 0
+fi
+
+# Call the encrypt.sh script
+$ENCRYPT_SCRIPT -f "$input_file" -o "$output_file" -p "$password"
+
+# Check if the encryption was successful
+if [ $? -eq 0 ]; then
+    msg="The file '$input_file' has been successfully encrypted to '$output_file'."
+    notify-send "$TITLE" "$msg"
+else
+    msg="Error during encryption."
+    notify-send "$TITLE" "$msg"
+    exit 1
+fi
