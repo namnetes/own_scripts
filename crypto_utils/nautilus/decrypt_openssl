@@ -1,0 +1,97 @@
+#!/bin/bash
+#
+# nautilus_decrypt.sh - Nautilus script to decrypt a selected file using decrypt.sh
+#
+# Usage:
+#   ./nautilus_decrypt.sh <file_to_decrypt>
+#
+# Note: This script prompts for a passphrase using yad and calls the decrypt.sh script.
+
+# Function to prompt the user for an output file name using yad
+prompt_for_output_file() {
+    yad --entry --TITLE="Output File" --text="$1" --entry-text="output_file"
+}
+
+# Function to check if a file already exists
+check_file_exists() {
+    if [ -f "$1" ]; then
+        return 0  # File exists
+    else
+        return 1  # File does not exist
+    fi
+}
+
+TITLE="Nautilus Script Déchiffrement OpenSSL"
+DECRYPT_SCRIPT="$HOME/own_scripts/crypto_utils/decrypt_file.sh"
+
+# Check if yad is installed
+if ! command -v yad &> /dev/null; then
+    notify-send --urgency=critical "$TITLE" "Error: yad is not installed. Please install yad to use this script."
+    exit 1
+fi
+
+# Check if script to execute exists
+if [ ! -f "$DECRYPT_SCRIPT" ]; then
+    notify-send --urgency=critical "$TITLE" "Error: $DECRYPT_SCRIPT not found."
+    exit 1
+fi
+
+# Main logic
+input_file="$1"
+
+# Check if the file is provided
+if [ -z "$input_file" ]; then
+    notify-send --urgency=critical "$TITLE" "Error: No file specified."
+    exit 1
+fi
+
+# Check if the input file exists
+if [ ! -f "$input_file" ]; then
+    notify-send --urgency=critical "$TITLE" "Error: The file '$input_file' does not exist."
+    exit 1
+fi
+
+# Determine the output file
+if [[ "$input_file" == *.enc ]]; then
+    output_file="${input_file%.enc}"
+    
+    # Check if the output file exists and prompt for a new name if necessary
+    if check_file_exists "$output_file"; then
+        output_file=$(prompt_for_output_file "The file '$output_file' already exists. Enter a different output file name:")
+    fi
+else
+    output_file=$(prompt_for_output_file "Enter the name of the output file:")
+fi
+
+# Check if the user canceled the dialog
+if [ $? -ne 0 ]; then
+    notify-send --urgency=critical "$TITLE" "Decryption canceled."
+    exit 1
+fi
+
+# Check if the newly entered output file already exists
+if check_file_exists "$output_file"; then
+    notify-send --urgency=critical "$TITLE" "Error: The file '$output_file' already exists."
+    exit 1
+fi
+
+# Prompt for the passphrase using yad
+password=$(yad --entry --TITLE="Passphrase" --text="Enter passphrase for decryption:" --hide-text)
+
+# Check if the user canceled the passphrase dialog
+if [ $? -ne 0 ]; then
+    notify-send --urgency=critical "$TITLE" "Decryption canceled."
+    exit 0
+fi
+
+# Call the decrypt.sh script
+$DECRYPT_SCRIPT -f "$input_file" -o "$output_file" -p "$password"
+
+# Check if the decryption was successful
+if [ $? -eq 0 ]; then
+    notify-send "$TITLE" "The file '$input_file' has been successfully decrypted to '$output_file'."
+else
+    notify-send --urgency=critical "$TITLE" "Error during decryption."
+    exit 1
+fi
+
